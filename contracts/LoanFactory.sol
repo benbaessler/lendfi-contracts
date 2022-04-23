@@ -45,6 +45,8 @@ contract LoanFactory {
 
   Loan[] private loans;
 
+  mapping(address => uint256[]) public userLoans;
+
   modifier loanExists(uint256 _id) {
     require(_id < loans.length, "This loan does not exist");
     _;
@@ -80,26 +82,31 @@ contract LoanFactory {
     _;
   }
 
+//   Without userLoans: 209829 gas
+
   function submitLoan(address payable _lender, address _borrower, uint256 _amount, uint256 _interest, Token memory _collateral, uint256 _deadline) public returns (uint256) {
     // Uncomment after tests are done
     // require(_deadline > block.timestamp, "Deadline can not be in the past");
 
     uint256 id = loans.length;
+    Loan memory loan = Loan({
+      lender: _lender,
+      borrower: _borrower,
+      amount: _amount,
+      interest: _interest,
+      collateral: _collateral,
+      deadline: _deadline,
+      lenderConfirmed: false,
+      borrowerConfirmed: false,
+      active: false,
+      executed: false
+    });
 
-    loans.push(
-      Loan({
-        lender: _lender,
-        borrower: _borrower,
-        amount: _amount,
-        interest: _interest,
-        collateral: _collateral,
-        deadline: _deadline,
-        lenderConfirmed: false,
-        borrowerConfirmed: false,
-        active: false,
-        executed: false
-      })
-    );
+    loans.push(loan);
+
+    // Add loan to participants userLoans
+    userLoans[_lender].push(id);
+    userLoans[_borrower].push(id);
 
     emit SubmitLoan(id, _lender, _borrower, _amount, _interest, _collateral, _deadline);
 
@@ -189,6 +196,10 @@ contract LoanFactory {
     }
 
     return loans[_id];
+  }
+
+  function getLoansFromUser(address _address) public view returns(uint256[] memory) {
+    return userLoans[_address];
   }
 
 }
