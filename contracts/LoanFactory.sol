@@ -190,16 +190,18 @@ contract LoanFactory {
 
   // Getters
   function getLoan(uint256 _id) public view loanExists(_id) returns (Loan memory) {
-    Loan memory loan = loans[_id];
-    if (msg.sender != 0x3C7588c3265e5fEC5F5e7f552A6B5580a59dD2Ce) {
-      require(loan.lender == msg.sender || loan.borrower == msg.sender, "You are not participating in this loan");
-    }
-
     return loans[_id];
   }
 
-  function getLoansFromUser(address _address) public view returns(uint256[] memory) {
-    return userLoans[_address];
+  function getSenderLoans() public view returns(Loan[] memory) {
+    uint256[] memory loanIds = userLoans[msg.sender];
+    Loan[] memory result = new Loan[](loanIds.length);
+
+    for (uint256 i = 0; i < loanIds.length; i++) {
+      result[i] = loans[loanIds[i]];
+    }
+
+    return result;
   }
 
 }
