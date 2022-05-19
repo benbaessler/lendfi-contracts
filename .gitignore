@@ -4,6 +4,7 @@ coverage
 coverage.json
 typechain
 package-lock.json
+contracts/TestCollateral.sol
 
 #Hardhat files
 cache
