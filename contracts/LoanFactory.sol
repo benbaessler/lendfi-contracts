@@ -31,6 +31,7 @@ contract LoanFactory {
   } 
 
   struct Loan {
+    uint256 id;
     address payable lender;
     address payable borrower;
     uint256 amount;
@@ -41,6 +42,7 @@ contract LoanFactory {
     bool borrowerConfirmed;
     bool active;
     bool executed;
+    bool loanPaid;
   }
 
   Loan[] private loans;
@@ -84,12 +86,13 @@ contract LoanFactory {
 
 //   Without userLoans: 209829 gas
 
-  function submitLoan(address payable _lender, address payable _borrower, uint256 _amount, uint256 _interest, Token memory _collateral, uint256 _deadline) public returns (uint256) {
+  function submitLoan(address payable _lender, address payable _borrower, uint256 _amount, uint256 _interest, Token memory _collateral, uint256 _deadline) public {
     // Uncomment after tests are done
     // require(_deadline > block.timestamp, "Deadline can not be in the past");
 
-    uint256 id = loans.length;
+    uint256 _id = loans.length;
     Loan memory loan = Loan({
+      id: _id,
       lender: _lender,
       borrower: _borrower,
       amount: _amount,
@@ -99,18 +102,17 @@ contract LoanFactory {
       lenderConfirmed: false,
       borrowerConfirmed: false,
       active: false,
-      executed: false
+      executed: false,
+      loanPaid: false
     });
 
     loans.push(loan);
 
     // Add loan to participants userLoans
-    userLoans[_lender].push(id);
-    userLoans[_borrower].push(id);
+    userLoans[_lender].push(_id);
+    userLoans[_borrower].push(_id);
 
-    emit SubmitLoan(id, _lender, _borrower, _amount, _interest, _collateral, _deadline);
-
-    return id;
+    emit SubmitLoan(_id, _lender, _borrower, _amount, _interest, _collateral, _deadline);
   }
 
   function confirmLender(uint256 _id) external payable loanExists(_id) notActive(_id) notExecuted(_id) isLender(_id) deadlineAhead(_id) {
@@ -167,6 +169,7 @@ contract LoanFactory {
 
     loan.active = false;
     loan.executed = true;
+    loan.loanPaid = true;
 
     emit ExecuteLoan(_id, true);
   }
