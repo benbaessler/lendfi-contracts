@@ -43,9 +43,11 @@ contract LoanFactory {
     bool active;
     bool executed;
     bool loanPaid;
+    bool collateralClaimed;
   }
 
   Loan[] private loans;
+  address constant feeReceiver = 0x3e3583fa70ddc1163ac09E4DE188F438ADaE7c94;
 
   mapping(address => uint256[]) public userLoans;
 
@@ -103,7 +105,8 @@ contract LoanFactory {
       borrowerConfirmed: false,
       active: false,
       executed: false,
-      loanPaid: false
+      loanPaid: false,
+      collateralClaimed: false
     });
 
     loans.push(loan);
@@ -159,7 +162,10 @@ contract LoanFactory {
 
   function paybackLoan(uint256 _id) public payable loanExists(_id) isActive(_id) notExecuted(_id) isBorrower(_id) deadlineAhead(_id) {
     Loan storage loan = loans[_id];
-    require(msg.value == loan.amount + loan.interest, "Please pay back the exact amount you owe");
+    // Adding interest + 1% fee
+    uint256 paybackAmount = loan.amount + loan.interest + loan.amount / 100;
+
+    require(msg.value == paybackAmount, "Please pay back the exact amount you owe");
 
     bool loanPaid = loan.lender.send(msg.value);
     require(loanPaid, "Something went wrong with the payment");
@@ -183,6 +189,7 @@ contract LoanFactory {
 
     loan.active = false;
     loan.executed = true;
+    loan.collateralClaimed = true;
 
     emit ExecuteLoan(_id, false);
   }
