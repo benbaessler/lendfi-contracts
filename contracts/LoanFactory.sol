@@ -121,8 +121,8 @@ contract LoanFactory {
     Loan storage loan = loans[_id];
 
     require(!loan.lenderConfirmed, "You already confirmed this loan");
-    // Adding 0.05% fee
-    require(msg.value == loan.amount + loan.amount / 200, "Please send the amount you agreed to loaning out");
+    // Adding 1% fee
+    require(msg.value == loan.amount + loan.amount / 100, "Please send the amount you agreed to loaning out");
 
     loan.lenderConfirmed = true;
 
@@ -155,7 +155,7 @@ contract LoanFactory {
     Loan storage loan = loans[_id];
     require(loan.lenderConfirmed && loan.borrowerConfirmed, "Loan is unconfirmed");
 
-    bool transfer = loan.borrower.send(msg.value);
+    bool transfer = loan.borrower.send(loan.amount);
     require(transfer, "Something went wrong with the payment");
 
     loan.active = true;
@@ -169,7 +169,7 @@ contract LoanFactory {
 
     require(msg.value == paybackAmount, "Please pay back the exact amount you owe");
 
-    bool loanPaid = loan.lender.send(msg.value);
+    bool loanPaid = loan.lender.send(paybackAmount);
     require(loanPaid, "Something went wrong with the payment");
 
     IERC721 collateral = IERC721(loan.collateral.contractAddress);

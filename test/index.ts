@@ -48,7 +48,7 @@ describe("LoanFactory contract", () => {
     it('Should let borrower confirm loan with collateral deposit', async () => {
       await collateral.connect(user2).mint(1)
 
-      await collateral.connect(user2).setApprovalForAll(contract.address, true)
+      // await collateral.connect(user2).setApprovalForAll(contract.address, true)
       await contract.connect(user2).confirmBorrower(0)
 
       const loan = await contract.getLoan(0)
