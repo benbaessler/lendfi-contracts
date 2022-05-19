@@ -17,12 +17,11 @@ const config = {
     goerli: {
       url: `https://eth-goerli.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
       accounts: [process.env.WALLET_PRIVATE_KEY]
+    },
+    rinkeby: {
+      url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
+      accounts: [process.env.WALLET_PRIVATE_KEY]
     }
-
-    // rinkeby: {
-    //   url: `https://eth-rinkeby.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
-    //   accounts: [process.env.WALLET_PRIVATE_KEY]
-    // }
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
