@@ -32,7 +32,7 @@ contract LoanFactory {
 
   struct Loan {
     address payable lender;
-    address borrower;
+    address payable borrower;
     uint256 amount;
     uint256 interest;
     Token collateral;
@@ -84,7 +84,7 @@ contract LoanFactory {
 
 //   Without userLoans: 209829 gas
 
-  function submitLoan(address payable _lender, address _borrower, uint256 _amount, uint256 _interest, Token memory _collateral, uint256 _deadline) public returns (uint256) {
+  function submitLoan(address payable _lender, address payable _borrower, uint256 _amount, uint256 _interest, Token memory _collateral, uint256 _deadline) public returns (uint256) {
     // Uncomment after tests are done
     // require(_deadline > block.timestamp, "Deadline can not be in the past");
 
@@ -147,6 +147,9 @@ contract LoanFactory {
   function activateLoan(uint256 _id) private loanExists(_id) notExecuted(_id) notActive(_id) {
     Loan storage loan = loans[_id];
     require(loan.lenderConfirmed && loan.borrowerConfirmed, "Loan is unconfirmed");
+
+    bool transfer = loan.borrower.send(msg.value);
+    require(transfer, "Something went wrong with the payment");
 
     loan.active = true;
     emit ActivateLoan(_id);
