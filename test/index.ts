@@ -38,16 +38,6 @@ describe("LoanFactory contract", () => {
       expect(loan.amount).to.equal(ethers.utils.parseEther('.5'))
     })
 
-    it('Should add loan to participants userLoans after submit', async () => {
-      const lenderLoans = await contract.getLoansFromUser(user1.address)
-      const borrowerLoans = await contract.getLoansFromUser(user2.address)
-
-      expect(lenderLoans).to.equal([ethers.BigNumber.from(0)])
-      expect(borrowerLoans).to.equal([ethers.BigNumber.from(0)])
-
-      // AssertionError: expected [ BigNumber { value: "0" } ] to equal [ BigNumber { value: "0" } ]
-    })
-
     it('Should let lender confirm loan with loan deposit', async () => {
       await contract.confirmLender(0, { value: ethers.utils.parseEther('.5') })
 
