@@ -4,7 +4,7 @@ pragma solidity >=0.8.4;
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "hardhat/console.sol";
 
-contract LoanFactory {
+contract LendFi {
 
   event SubmitLoan(
     uint256 indexed id,
@@ -119,8 +119,8 @@ contract LoanFactory {
 
   function confirmLender(uint256 _id) external payable loanExists(_id) notActive(_id) notExecuted(_id) isLender(_id) deadlineAhead(_id) {
     Loan storage loan = loans[_id];
-
     require(!loan.lenderConfirmed, "You already confirmed this loan");
+
     // Adding 1% fee
     require(msg.value == loan.amount + loan.amount / 100, "Please send the amount you agreed to loaning out");
 
@@ -138,8 +138,6 @@ contract LoanFactory {
     
     IERC721 collateral = IERC721(loan.collateral.contractAddress);
     require(collateral.isApprovedForAll(msg.sender, address(this)), "Token is not approved for this contract");
-
-    require(collateral.isApprovedForAll(msg.sender, address(this)), "Please approve this token to the Contract");
 
     collateral.transferFrom(msg.sender, address(this), loan.collateral.tokenId);
 

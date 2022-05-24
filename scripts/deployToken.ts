@@ -8,7 +8,8 @@ async function main() {
 
   console.log("Contract deployed to:", contract.address);
   
-  await contract.mint(0)
+  await contract.mint(1)
+  console.log('Token #1 minted')
 }
 
 main()
