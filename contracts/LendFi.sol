@@ -130,8 +130,6 @@ contract LendFi {
   function confirmLender(uint256 _id) external payable loanExists(_id) notActive(_id) notExecuted(_id) isLender(_id) notExpired(_id) {
     Loan storage loan = loans[_id];
     require(!loan.lenderConfirmed, "You already confirmed this loan");
-
-    // Adding 1% fee
     require(msg.value == loan.amount, "Please send the amount you agreed to loaning out");
 
     loan.lenderConfirmed = true;
@@ -206,7 +204,7 @@ contract LendFi {
 
   function extendDeadline(uint256 _id, uint256 _newDeadline) public loanExists(_id) notExecuted(_id) isLender(_id) {
     Loan storage loan = loans[_id];
-    require(_newDeadline > loan.deadline, "New deadline needs to be after current deadline");
+    require(_newDeadline > loan.deadline, "You can not shorten the deadline");
 
     loan.deadline = _newDeadline;
   }
