@@ -47,7 +47,6 @@ contract LendFi {
   }
 
   Loan[] private loans;
-  address constant feeReceiver = 0x3e3583fa70ddc1163ac09E4DE188F438ADaE7c94;
 
   mapping(address => uint256[]) public userLoans;
 
@@ -133,7 +132,7 @@ contract LendFi {
     require(!loan.lenderConfirmed, "You already confirmed this loan");
 
     // Adding 1% fee
-    require(msg.value == loan.amount + loan.amount / 100, "Please send the amount you agreed to loaning out");
+    require(msg.value == loan.amount, "Please send the amount you agreed to loaning out");
 
     loan.lenderConfirmed = true;
 
@@ -174,7 +173,7 @@ contract LendFi {
   function paybackLoan(uint256 _id) public payable loanExists(_id) isActive(_id) notExecuted(_id) isBorrower(_id) notExpired(_id) {
     Loan storage loan = loans[_id];
     // Adding interest + 0.05% fee
-    uint256 paybackAmount = loan.amount + loan.interest + loan.amount / 200;
+    uint256 paybackAmount = loan.amount + loan.interest;
 
     require(msg.value == paybackAmount, "Please pay back the exact amount you owe");
 
@@ -212,16 +211,19 @@ contract LendFi {
     loan.deadline = _newDeadline;
   }
 
+  // If the loan expires with only one confirmation, the confirmer can claim the assets they transferred
   function loanExpired(uint256 _id) public loanExists(_id) isParticipant(_id) notActive(_id) notExecuted(_id) isExpired(_id) {
     Loan storage loan = loans[_id];
     require(loan.lender == msg.sender && loan.lenderConfirmed || loan.borrower == msg.sender && loan.borrowerConfirmed, "You have not confirmed this loan");
 
+    // If the caller is the lender, they will get their loan deposit back
     if (loan.lender == msg.sender && loan.lenderConfirmed) {
       bool transfer = loan.lender.send(loan.amount + loan.amount / 100);
       require(transfer, "Something went wrong with the transfer");
       loan.lenderConfirmed = false;
     }
 
+    // If the caller is the borrower, they will get their Collateral NFT back
     if (loan.borrower == msg.sender && loan.borrowerConfirmed) {
       IERC721 collateral = IERC721(loan.collateral.contractAddress);
       collateral.transferFrom(address(this), loan.borrower, loan.collateral.tokenId);
