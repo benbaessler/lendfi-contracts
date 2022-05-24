@@ -71,7 +71,7 @@ contract LendFi {
   }
 
   modifier isExpired(uint256 _id) {
-    require(loans[_id].deadline <= block.timestamp, "This loans is not expired");
+    require(loans[_id].deadline <= block.timestamp, "This loan is not expired");
     _;
   }
 
@@ -188,9 +188,8 @@ contract LendFi {
     emit ExecuteLoan(_id, true);
   }
 
-  function claimCollateral(uint256 _id) public loanExists(_id) isActive(_id) notExecuted(_id) isLender(_id) {
+  function claimCollateral(uint256 _id) public loanExists(_id) isActive(_id) notExecuted(_id) isLender(_id) isExpired(_id) {
     Loan storage loan = loans[_id];
-    require(block.timestamp >= loan.deadline, "Deadline not reached");
 
     IERC721 collateral = IERC721(loan.collateral.contractAddress);
     collateral.transferFrom(address(this), loan.lender, loan.collateral.tokenId);
@@ -210,13 +209,13 @@ contract LendFi {
   }
 
   // If the loan expires with only one confirmation, the confirmer can claim the assets they transferred
-  function loanExpired(uint256 _id) public loanExists(_id) isParticipant(_id) notActive(_id) notExecuted(_id) isExpired(_id) {
+  function revokeConfirmation(uint256 _id) public loanExists(_id) isParticipant(_id) notActive(_id) notExecuted(_id) isExpired(_id) {
     Loan storage loan = loans[_id];
     require(loan.lender == msg.sender && loan.lenderConfirmed || loan.borrower == msg.sender && loan.borrowerConfirmed, "You have not confirmed this loan");
 
     // If the caller is the lender, they will get their loan deposit back
     if (loan.lender == msg.sender && loan.lenderConfirmed) {
-      bool transfer = loan.lender.send(loan.amount + loan.amount / 100);
+      bool transfer = loan.lender.send(loan.amount);
       require(transfer, "Something went wrong with the transfer");
       loan.lenderConfirmed = false;
     }
