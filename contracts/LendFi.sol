@@ -66,8 +66,13 @@ contract LendFi {
     _;
   }
 
-  modifier deadlineAhead(uint256 _id) {
+  modifier notExpired(uint256 _id) {
     require(loans[_id].deadline >= block.timestamp, "This loans deadline is exceeded");
+    _;
+  }
+
+  modifier isExpired(uint256 _id) {
+    require(loans[_id].deadline <= block.timestamp, "This loans is not expired");
     _;
   }
 
@@ -81,8 +86,14 @@ contract LendFi {
     _;
   }
 
+
   modifier isBorrower(uint256 _id) {
     require(loans[_id].borrower == msg.sender, "You are not the borrower of this loan");
+    _;
+  }
+
+  modifier isParticipant(uint256 _id) {
+    require(loans[_id].lender == msg.sender || loans[_id].borrower == msg.sender, "You are not participating in this loan");
     _;
   }
 
@@ -117,7 +128,7 @@ contract LendFi {
     emit SubmitLoan(_id, _lender, _borrower, _amount, _interest, _collateral, _deadline);
   }
 
-  function confirmLender(uint256 _id) external payable loanExists(_id) notActive(_id) notExecuted(_id) isLender(_id) deadlineAhead(_id) {
+  function confirmLender(uint256 _id) external payable loanExists(_id) notActive(_id) notExecuted(_id) isLender(_id) notExpired(_id) {
     Loan storage loan = loans[_id];
     require(!loan.lenderConfirmed, "You already confirmed this loan");
 
@@ -132,7 +143,7 @@ contract LendFi {
     emit ConfirmLender(_id, msg.sender);
   }
 
-  function confirmBorrower(uint256 _id) public loanExists(_id) notActive(_id) notExecuted(_id) isBorrower(_id) deadlineAhead(_id) {
+  function confirmBorrower(uint256 _id) public loanExists(_id) notActive(_id) notExecuted(_id) isBorrower(_id) notExpired(_id) {
     Loan storage loan = loans[_id];
     require(!loan.borrowerConfirmed, "You already confirmed this loan");
     
@@ -160,7 +171,7 @@ contract LendFi {
     emit ActivateLoan(_id);
   }
 
-  function paybackLoan(uint256 _id) public payable loanExists(_id) isActive(_id) notExecuted(_id) isBorrower(_id) deadlineAhead(_id) {
+  function paybackLoan(uint256 _id) public payable loanExists(_id) isActive(_id) notExecuted(_id) isBorrower(_id) notExpired(_id) {
     Loan storage loan = loans[_id];
     // Adding interest + 0.05% fee
     uint256 paybackAmount = loan.amount + loan.interest + loan.amount / 200;
@@ -199,6 +210,23 @@ contract LendFi {
     require(_newDeadline > loan.deadline, "New deadline needs to be after current deadline");
 
     loan.deadline = _newDeadline;
+  }
+
+  function loanExpired(uint256 _id) public loanExists(_id) isParticipant(_id) notActive(_id) notExecuted(_id) isExpired(_id) {
+    Loan storage loan = loans[_id];
+    require(loan.lender == msg.sender && loan.lenderConfirmed || loan.borrower == msg.sender && loan.borrowerConfirmed, "You have not confirmed this loan");
+
+    if (loan.lender == msg.sender && loan.lenderConfirmed) {
+      bool transfer = loan.lender.send(loan.amount + loan.amount / 100);
+      require(transfer, "Something went wrong with the transfer");
+      loan.lenderConfirmed = false;
+    }
+
+    if (loan.borrower == msg.sender && loan.borrowerConfirmed) {
+      IERC721 collateral = IERC721(loan.collateral.contractAddress);
+      collateral.transferFrom(address(this), loan.borrower, loan.collateral.tokenId);
+      loan.borrowerConfirmed = false;
+    }
   }
 
   // Getters
