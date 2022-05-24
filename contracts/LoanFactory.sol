@@ -87,8 +87,8 @@ contract LoanFactory {
   }
 
   function submitLoan(address payable _lender, address payable _borrower, uint256 _amount, uint256 _interest, Token memory _collateral, uint256 _deadline) public {
-    // Uncomment after tests are done
     require(_deadline > block.timestamp, "Deadline can not be in the past");
+    require(_lender.balance > _amount, "Lender has insufficient funds");
     require(_lender != _borrower, "The lender and borrower can not be the same");
 
     uint256 _id = loans.length;
